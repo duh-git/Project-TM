@@ -1,0 +1,3 @@
+START: open TM.exe in 'src' folder
+
+start DB: task.csv

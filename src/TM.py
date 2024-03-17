@@ -5,14 +5,11 @@ from tkcalendar import Calendar
 import colorama
 
 class App(tk.Tk):
-  
-  
   def __init__(self) -> None:
     super().__init__()
-    self.id = 10
     self.title("Task Manager")
-    self.iconphoto(False, tk.PhotoImage(file="./public/mospolytech-logo-white.png"))
-    self.geometry(f"800x650+100+50")
+    self.iconphoto(False, tk.PhotoImage(file="../public/mospolytech-logo-white.png"))
+    self.geometry(f"800x650+400+50")
     self.resizable(False, False)
     self.config(bg="#3A3A54")
 
@@ -49,8 +46,8 @@ class App(tk.Tk):
     self.deadline_calendar = Calendar(self, date_pattern="y-mm-dd",)
     self.deadline_calendar.place(x=395, y=60)
     
-    self.description_entry = tk.Text(self, height=5, width=35, font=("Arial", 16))
-    self.description_entry.place(x=220, y=248)
+    self.worker_name = tk.Text(self, height=5, width=35, font=("Arial", 16))
+    self.worker_name.place(x=220, y=248)
     
     # Button"s
     reset_button = tk.Button(self, text="Set", font=("Arial", 18), fg="black", width=6, command=self.select_date)
@@ -79,14 +76,13 @@ class App(tk.Tk):
       "title": self.task_name.get(0.1, tk.END)[:-1],
       "speciality": self.speciality,
       "deadline": self.deadline_entry.get(0.1, tk.END)[:-1],
-      "worker": self.description_entry.get(0.1, tk.END)[:-1],
+      "worker": self.worker_name.get(0.1, tk.END)[:-1],
     }
-    self.id += 1
-    temp_list = [self.id, temp_obj["title"], temp_obj["worker"], temp_obj["speciality"], temp_obj["deadline"]]
-    self.worker_tree.insert("", tk.END, values=temp_list)
     
     ### use SQL (temp_obj)
-    self.sql_query(f"INSERT INTO task (name, speciality, deadline, worker) VALUES ('{temp_obj['title']}', '{temp_obj['speciality']}', '{temp_obj['deadline']}', '{temp_obj['worker']}');")
+    id = self.sql_query(f"INSERT INTO task (name, speciality, deadline, worker) VALUES ('{temp_obj['title']}', '{temp_obj['speciality']}', '{temp_obj['deadline']}', '{temp_obj['worker']}');")
+    temp_list = [id[0]['id'], temp_obj["title"], temp_obj["worker"], temp_obj["speciality"], temp_obj["deadline"]]
+    self.worker_tree.insert("", tk.END, values=temp_list)
 
     temp_obj = {}
 
@@ -115,7 +111,7 @@ class App(tk.Tk):
     delete_button = tk.Button(self, text="Delete", font=("Arial", 18), fg="black", bg="#E37979", width=6, command=self.delete_item)
     delete_button.place(x=666, y=480)
     
-    # refresh_button = tk.Button(self, text="Refresh", font=("Arial", 18), fg="black", width=6, command=self.delete_item)
+    # refresh_button = tk.Button(self, text="Refresh", font=("Arial", 18), fg="black", width=6, command=self.refresh)
     # refresh_button.place(x=666, y=560)
     
   def delete_item(self):
@@ -125,7 +121,8 @@ class App(tk.Tk):
       self.worker_tree.delete(self.worker_tree.selection())
     
     ### SQL (use item)
-    # self.sql_query(f"DELETE FROM `task` WHERE `ID` = {item[0]} LIMIT 1;")
+    self.sql_query(f"DELETE FROM `task` WHERE `id` = {item[0]} LIMIT 1;")
+    
     
   def sql_query(self, query):
     answer = ""
@@ -142,8 +139,15 @@ class App(tk.Tk):
       try:
         with connection.cursor() as cursor:
           cursor.execute(query)
-          answer = cursor.fetchall()
+          if "INSERT" in query:
+            connection.commit()
+            task_name = query.split('\'')[1]
+            cursor.execute(f"SELECT id FROM task WHERE name = '{task_name}';")
           
+          if "DELETE" in query:
+            connection.commit()
+          
+          answer = cursor.fetchall()
           print(colorama.Back.WHITE + colorama.Fore.BLACK + "{:-<30}".format("Total received values:") + f"{len(answer):->10}")
 
       except Exception as error:

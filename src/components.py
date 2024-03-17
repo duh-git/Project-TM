@@ -5,8 +5,11 @@ from tkcalendar import Calendar
 import colorama
 
 class App(tk.Tk):
+  
+  
   def __init__(self) -> None:
     super().__init__()
+    self.id = 10
     self.title("Task Manager")
     self.iconphoto(False, tk.PhotoImage(file="./public/mospolytech-logo-white.png"))
     self.geometry(f"800x650+100+50")
@@ -24,7 +27,7 @@ class App(tk.Tk):
     new_task_label.place(x=40, y=30)
     
     # Label"s
-    labels = ["Name", "Speciality", "Deadline", "Description"]
+    labels = ["Name", "Speciality", "Deadline", "Worker"]
     for i, label_text in enumerate(labels):
         label = tk.Label(self, text=label_text, font=("Arial", 20), fg="white", bg="#3A3A54")
         label.place(x=60, y=85 + 55*i)
@@ -33,8 +36,8 @@ class App(tk.Tk):
     self.task_name = tk.Text(self, height=1, width=12, font=("Arial", 16))
     self.task_name.place(x=220, y=85)
     
-    self.speciality = "Frontend\n"
-    speciality_options = ["Frontend", "Backend", "Team Leader", "Designer"]
+    self.speciality = "Frontend"
+    speciality_options = ["Frontend", "Backend", "TeamLeader", "Designer"]
     speciality_var = tk.StringVar(self)
     speciality_var.set(speciality_options[0])
     speciality_menu = tk.OptionMenu(self, speciality_var, *speciality_options, command=self.select_speciality)
@@ -69,22 +72,22 @@ class App(tk.Tk):
     self.deadline_entry.insert(0.1, date)
     
   def select_speciality(self, selection):
-    self.speciality = selection + "\n"
+    self.speciality = selection
     
   def submit(self):
     temp_obj = {
-      "title": self.task_name.get(0.1, tk.END),
+      "title": self.task_name.get(0.1, tk.END)[:-1],
       "speciality": self.speciality,
-      "daedline": self.deadline_entry.get(0.1, tk.END),
-      "description": self.description_entry.get(0.1, tk.END),
+      "deadline": self.deadline_entry.get(0.1, tk.END)[:-1],
+      "worker": self.description_entry.get(0.1, tk.END)[:-1],
     }
-    
-    for key, value in temp_obj.items():
-      print(key, value[:-1])
-    print()
+    self.id += 1
+    temp_list = [self.id, temp_obj["title"], temp_obj["worker"], temp_obj["speciality"], temp_obj["deadline"]]
+    self.worker_tree.insert("", tk.END, values=temp_list)
     
     ### use SQL (temp_obj)
-    
+    self.sql_query(f"INSERT INTO task (name, speciality, deadline, worker) VALUES ('{temp_obj['title']}', '{temp_obj['speciality']}', '{temp_obj['deadline']}', '{temp_obj['worker']}');")
+
     temp_obj = {}
 
 
@@ -103,89 +106,59 @@ class App(tk.Tk):
       
     col_width = (35, 120, 200, 100, 150)
     for i, width in enumerate(col_width):
-      self.worker_tree.column(f"#{i+1}", width=width, anchor='center')
-    
-    ### use SQL (download data)
-    ### item examle: ['1', 'A', 'Dima', 'Back', '10.11.2024']
+      self.worker_tree.column(f"#{i+1}", width=width, anchor="center")
     
     for item in cash:
       self.worker_tree.insert("", tk.END, values=list(item.values()))
-    
-    # with open("./contacts.csv", newline="") as f:
-    #   for item in csv.reader(f):
-    #     item = item[0].split(";")
-    #     print(item)
-    #     self.worker_tree.insert("", tk.END, values=item)
-    #     self.cash.append(item)
 
     # Button
     delete_button = tk.Button(self, text="Delete", font=("Arial", 18), fg="black", bg="#E37979", width=6, command=self.delete_item)
     delete_button.place(x=666, y=480)
     
-  #   scroll = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.worker_tree.yview)
-  #   self.worker_tree.configure(yscroll=scroll.set)
-  #   scroll.place(x=720, y=500)
-  # 
-  #   self.task_description = tk.Text(self, height=5, width=35, font=("Arial", 16))
-  #   self.task_description.place(x=40, y=640)
-  # 
-  # 
-  #   with open("./contacts.csv", newline="") as f:
-  #     for contact in csv.reader(f):
-  #       contact = contact[0].split(";")
-  #       self.worker_tree.insert("", tk.END, values=contact)
-  # 
-  #   self.worker_tree.bind("<<TreeviewSelect>>", self.print_selection)
-  # 
-  # def print_selection(self, event):
-  #   for selection in self.worker_tree.selection():
-  #     item = self.worker_tree.item(selection)
-  #     ###
-  #     TID, Task, Worker, Speciality, Deadline = item["values"]
-  #     print(TID, Task, Worker, Speciality, Deadline)
-
+    # refresh_button = tk.Button(self, text="Refresh", font=("Arial", 18), fg="black", width=6, command=self.delete_item)
+    # refresh_button.place(x=666, y=560)
+    
   def delete_item(self):
     item_treeID = self.worker_tree.selection()
     item = self.worker_tree.item(item_treeID)["values"]
-    
-    self.worker_tree.delete(self.worker_tree.selection())
+    if item_treeID:
+      self.worker_tree.delete(self.worker_tree.selection())
     
     ### SQL (use item)
-    
+    # self.sql_query(f"DELETE FROM `task` WHERE `ID` = {item[0]} LIMIT 1;")
     
   def sql_query(self, query):
-    answer = ''
+    answer = ""
     try:
       connection = sql.connect(
         host="localhost",
         user="root",
-        password='root',
+        password="root",
         database="Project TM",
         cursorclass=sql.cursors.DictCursor
       )
-      print(colorama.Back.GREEN + colorama.Fore.BLACK + '{:-^40}'.format('Connection SUCCESFUL'))
+      print(colorama.Back.GREEN + colorama.Fore.BLACK + "{:-^40}".format("Connection SUCCESFUL"))
 
       try:
         with connection.cursor() as cursor:
           cursor.execute(query)
           answer = cursor.fetchall()
           
-          print(colorama.Back.WHITE + colorama.Fore.BLACK + '{:-<30}'.format('Total received values:') + f'{len(answer):->10}')
+          print(colorama.Back.WHITE + colorama.Fore.BLACK + "{:-<30}".format("Total received values:") + f"{len(answer):->10}")
 
       except Exception as error:
-        print(colorama.Back.YELLOW + colorama.Fore.BLACK + '{:-^40}'.format('Connection INTERRAPTED'), error, sep='\n')
+        print(colorama.Back.YELLOW + colorama.Fore.BLACK + "{:-^40}".format("Connection INTERRAPTED"), error, sep="\n")
 
       finally:
         connection.close()
-        print(colorama.Back.GREEN + colorama.Fore.BLACK + '{:-^40}'.format('Connection CLOSED'))
+        print(colorama.Back.GREEN + colorama.Fore.BLACK + "{:-^40}".format("Connection CLOSED"))
 
     except Exception as error:
-      print(colorama.Back.RED + colorama.Fore.BLACK + '{:-^40}'.format('Connection FAILED'))
+      print(colorama.Back.RED + colorama.Fore.BLACK + "{:-^40}".format("Connection FAILED"))
       print(error)
+    print()
+    
     return answer
-
-  def render(self):
-    self.Worker_Table(self.sql_query("SELECT * FROM task"))
 
 
 if __name__ == "__main__":

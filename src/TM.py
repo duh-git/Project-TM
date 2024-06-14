@@ -8,9 +8,9 @@ class App(tk.Tk):
   def __init__(self) -> None:
     super().__init__()
     self.title("Task Manager")
-    self.iconphoto(False, tk.PhotoImage(file="../public/mospolytech-logo-white.png"))
-    self.geometry(f"800x650+400+50")
-    self.resizable(False, False)
+    self.iconphoto(False, tk.PhotoImage(file="../public/mospolytech-logo-white.png")) # IDK why but amount of points is metter
+    self.geometry(f"800x650+400+50")                                                  # Set "./public/..." you start it from TM.py,
+    self.resizable(False, False)                                                      # else "../public/..."
     self.config(bg="#3A3A54")
 
     self.Form()
